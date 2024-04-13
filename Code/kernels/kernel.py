@@ -44,12 +44,27 @@ def variationalCircuit(x,
 def ConjTransposeVirationalCircuit():
 	return qml.adjoint(variationalCircuit)
 
+def qkernelCircuitSubsampling(x1, 
+							  x2, 
+							  params
+							 ):
+	variationalCircuit(x1, params, wires)
+	ConjTransposeVirationalCircuit()
+	return qml.probs(wires=wires)
+
+def qkernel(x1, 
+			x2, 
+			params, 
+			kernel = "subsampling"
+		   ):
+	
+	return qkernelCircuitSubsampling(x1, x2, params)[0]
+
 def random_params(num_wires, num_layers):
     return np.random.uniform(0, 2 * np.pi, 
 							 (num_layers, 2, num_wires), requires_grad=True
 							)
 
-def qkernel():
-	pass
+
 
 
