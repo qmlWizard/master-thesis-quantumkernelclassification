@@ -1,6 +1,7 @@
 import numpy as np
 from pymgrid import Microgrid
 from pymgrid.modules import GensetModule, BatteryModule, LoadModule, RenewableModule
+import pandas as pd
 
 
 genset = GensetModule(running_min_production=10,
@@ -28,6 +29,15 @@ print("-------------------------------------------------------------------------
 
 for j in range(10):
      action = microgrid.sample_action()
-     microgrid.step(action)
-     
-print(microgrid.get_log(drop_singleton_key=True))
+     state = microgrid.step(action)[0]
+     print("_____________________________________________________________________________________________________")
+     print("State: ", j)
+     print(state, end = ' ')
+     print("_____________________________________________________________________________________________________")
+
+df = pd.DataFrame(microgrid.get_log())
+df.to_csv('microgrid_data.csv')
+                  
+
+
+print(microgrid.get_log())
