@@ -29,7 +29,7 @@ print("-------------------------------------------------------------------------
 
 for j in range(10):
      action = microgrid.sample_action()
-     state = microgrid.step(action)[0]
+     state = microgrid.step(action)
      print("_____________________________________________________________________________________________________")
      print("State: ", j)
      print(state, end = ' ')
