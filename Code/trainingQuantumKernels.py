@@ -2,7 +2,6 @@
 Tutorial: https://pennylane.ai/qml/demos/tutorial_kernel_based_training/
 """
 
-
 from pennylane import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -11,7 +10,6 @@ import pandas as pd
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
-
 
 def _make_circular_data(num_sectors):
     """Generate datapoints arranged in an even circle."""
@@ -23,7 +21,6 @@ def _make_circular_data(num_sectors):
     labels = 2 * np.remainder(np.floor_divide(angles, sector_angle), 2) - 1
 
     return x, y, labels
-
 
 def make_double_cake_data(num_sectors):
     x1, y1, labels1 = _make_circular_data(num_sectors)
@@ -42,7 +39,6 @@ def make_double_cake_data(num_sectors):
     Y = labels.astype(int)
 
     return X, Y
-
 
 def plot_double_cake_data(X, Y, ax, num_sectors=None):
     """Plot double cake data and corresponding sectors."""
