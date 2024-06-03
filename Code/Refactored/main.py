@@ -14,10 +14,11 @@ from datetime import datetime
 """
 #Custom functions
 from kernels import kernel_xx
-from kernel_training import alignment
+
 """
 
 from data_preprocessing import data_preprocess
+from kernel_alignment import alignment
 
 
 if __name__ == "__main__":
