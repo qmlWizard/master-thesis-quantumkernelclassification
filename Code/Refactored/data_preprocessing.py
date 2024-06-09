@@ -41,7 +41,7 @@ def data_preprocess(path, dr_type = None, dr_components = 0, normalize = True):
 	df = read_file(path)
 	print("Columns present in file,")
 	print(list(df.columns))
-	cols = list(df.columns) #.remove('fault')
+	cols = list(df.columns)
 
 	x = df[cols]
 	y = df[['fault']].to_numpy()		

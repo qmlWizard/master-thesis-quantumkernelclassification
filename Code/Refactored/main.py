@@ -11,13 +11,24 @@ from sklearn import preprocessing
 import sys
 from datetime import datetime
 
+import time
+
 """
 #Custom functions
 from kernels import kernel_xx
-from kernel_training import alignment
+
 """
 
 from data_preprocessing import data_preprocess
+from kernel_alignment import target_alignment
+from encoding import angle_encoding
+from ansatz import efficient_su2
+from kernel import kernel_circuit
+from utils import random_params
+
+
+
+
 
 
 if __name__ == "__main__":
@@ -55,6 +66,7 @@ if __name__ == "__main__":
 		print(e)
 
 	print("----------------------------------------------------------------------------------------------------")
+	time.sleep(2)
 	print("Sample Data: ")
 
 	cnt = 0
@@ -64,10 +76,26 @@ if __name__ == "__main__":
 		print("X: {} --> Y: {}".format(i, j))
 		cnt += 1
 
+	num_qubits = len(x[0])
 	
 	print("----------------------------------------------------------------------------------------------------")
+	time.sleep(2)
+	print("Creating Quantum Kernel Circuit...")
 
+	("----------------------------------------------------------------------------------------------------")
 
+	dev = qml.device("default.qubit", wires = num_qubits, shots = None)
+	wires = dev.wires.tolist()
 
+	params = random_params(len(wires), 1) 
 
+	print(params)
+ 
+	@qml.qnode(dev)
+	def kernel_circ(x1, x2, params, wires, num_qubits):
+		return kernel_circuit(x1, x2, params, wires, num_qubits)[0]
+
+	print(kernel_circuit(x[0], x[1], params, wires, num_qubits))
+	
+	("----------------------------------------------------------------------------------------------------")
 
