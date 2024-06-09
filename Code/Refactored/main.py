@@ -87,7 +87,9 @@ if __name__ == "__main__":
 	dev = qml.device("default.qubit", wires = num_qubits, shots = None)
 	wires = dev.wires.tolist()
 
-	params = random_params() #Yet to be code.
+	params = random_params(len(wires), 1) 
+
+	print(params)
  
 	@qml.qnode(dev)
 	def kernel_circ(x1, x2, params, wires, num_qubits):

@@ -14,12 +14,13 @@ def variational_circuit(x, params, num_qubits, wires):
 						input_scaling_param = layer_params[0, 0],  
 						hadamard = True
 					   )
+		
 		efficient_su2(num_qubits = num_qubits, params = layer_params[1:], wires = wires )
 
 def kernel_circuit(x1, x2, num_qubits, wires, params):
 	variational_circuit(
 						x = x1,
-					 	params = params[0],
+					 	params = params[0, ],
 						num_qubits = num_qubits,
 						wires = wires
 					   )
@@ -28,7 +29,7 @@ def kernel_circuit(x1, x2, num_qubits, wires, params):
 
 	adjoint_variational_circuit(
 						x = x2, 
-						params = params [1],
+						params = params [1, ],
 						num_qubits = num_qubits,
 						wires = wires
 						)
