@@ -195,18 +195,14 @@ print('-------------------------------------------------------------------------
 
 print("Length of Data Set: ", len(X))
 
-#init_kernel = lambda x1, x2: kernel(x1, x2, init_params)
-#K_init = qml.kernels.square_kernel_matrix(X, init_kernel, assume_normalized_kernel=True)
+init_kernel = lambda x1, x2: kernel(x1, x2, init_params)
+K_init = qml.kernels.square_kernel_matrix(X, init_kernel, assume_normalized_kernel=True)
 
 
-#with np.printoptions(precision=3, suppress=True):
-#    print(K_init)
-    
+with np.printoptions(precision=3, suppress=True):
+    print(K_init)
 
-#svm = SVC(kernel=lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, init_kernel)).fit(X, Y)	
-
-
-
+svm = SVC(kernel=lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, init_kernel)).fit(X, Y)	
 
 #accuracy_init = accuracy(svm, X, Y)
 #print(f"The accuracy of the kernel with random parameters is {accuracy_init:.3f}")

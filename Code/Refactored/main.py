@@ -18,10 +18,11 @@ from datetime import datetime
 import time
 
 #Configs
-
 train_without_alignment = True
 train_classical_svm = True
-
+train_alignment = False
+uncertinity_sampling = False
+sampling_type = 'entropy'
 
 if __name__ == "__main__":
 
@@ -95,18 +96,39 @@ if __name__ == "__main__":
 							  wires = wires, 
 							  num_qubits = num_qubits
 							 )
-	("----------------------------------------------------------------------------------------------------")
+	
+	print("----------------------------------------------------------------------------------------------------")
 	drawer = qml.draw(kernel)
 	print(drawer(x1 = x[0], x2 = x[1], params = params))
 	print("----------------------------------------------------------------------------------------------------")
 	print('Distance between 1st and 2nd Data Points', kernel(x1 = x[0], x2 = x[1], params = params)[0])
 	print("----------------------------------------------------------------------------------------------------")
 
-	
+	if train_classical_svm:
+
+		print("Training Classical Support Vector Classifier... ")
+
+		classical_svm = SVC(kernel='rbf').fit(x_train, y_train)
+		y_train_pred = classical_svm.predict(x_train)
+		training_accuracy = accuracy_score(y_train, y_train_pred)
+
+		print("Training Complete.")
+		print(f"Classical Training Accuracy: {training_accuracy * 100:.2f}%")
+		print("----------------------------------------------------------------------------------------------------")
+		print("Testing trained Classical Support Vector Classifier... ")
+		y_test_pred = classical_svm.predict(x_test)
+		testing_accuracy = accuracy_score(y_test, y_test_pred)
+
+		print(f"Classical Testing Accuracy: {testing_accuracy * 100:.2f}%")
+		print("----------------------------------------------------------------------------------------------------")
+
+
 	if train_without_alignment:
-		print("Training Support Vector Classifier... ")
+
+		print("Training Quantum Support Vector Classifier... ")
 		without_align_kernel = lambda x1, x2: kernel(x1, x2, params)
-		without_align_kernel_matrix = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, without_align_kernel)
+		without_align_kernel_matrix = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, without_align_kernel) 
+		K_init = qml.kernels.square_kernel_matrix(x_train, without_align_kernel, assume_normalized_kernel=True)
 		without_align_svm = SVC(kernel = without_align_kernel_matrix).fit(x_train, y_train)
 
 		y_train_pred = without_align_svm.predict(x_train)
@@ -121,5 +143,4 @@ if __name__ == "__main__":
 
 		print(f"Testing Accuracy: {testing_accuracy * 100:.2f}%")
 
-		print("----------------------------------------------------------------------------------------------------")
 		print("----------------------------------------------------------------------------------------------------")
