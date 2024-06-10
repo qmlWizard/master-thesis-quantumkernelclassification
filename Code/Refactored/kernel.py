@@ -1,26 +1,30 @@
 import pennylane as qml
 from pennylane import numpy as np
 from encoding import angle_encoding
-from ansatz import efficient_su2
+from ansatz import efficient_su2, basic
 
 def variational_circuit(x, params, num_qubits, wires):
-	for j, layer_params in enumerate(params):
+
+	layers = len(params) - 1
+	
+	for j in range(layers):
 		angle_encoding(
 						input_data = x, 
 				  		num_qubits = num_qubits, 
 				  		wires = wires, 
 						gate = 'RZ', 
 						input_scaling = True, 
-						input_scaling_param = layer_params[0, 0],  
+						input_scaling_param = params[j, 0, 0, 0],  
 						hadamard = True
 					   )
 		
-		efficient_su2(num_qubits = num_qubits, params = layer_params[1:], wires = wires )
+		efficient_su2(num_qubits = num_qubits, params = params[j, 1:], wires = wires )
 
-def kernel_circuit(x1, x2, num_qubits, wires, params):
+def kernel_circuit(x1, x2, num_qubits, wires, params = np.asarray([])):
+	
 	variational_circuit(
 						x = x1,
-					 	params = params[0, ],
+					 	params = params[0],
 						num_qubits = num_qubits,
 						wires = wires
 					   )
@@ -29,7 +33,7 @@ def kernel_circuit(x1, x2, num_qubits, wires, params):
 
 	adjoint_variational_circuit(
 						x = x2, 
-						params = params [1, ],
+						params = params[1],
 						num_qubits = num_qubits,
 						wires = wires
 						)
