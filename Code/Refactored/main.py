@@ -126,9 +126,9 @@ if __name__ == "__main__":
 	if train_without_alignment:
 
 		print("Training Quantum Support Vector Classifier... ")
-		without_align_kernel = lambda x1, x2: kernel(x1, x2, params)
+		without_align_kernel = lambda x1, x2: kernel(x1, x2, params)[0]
 		without_align_kernel_matrix = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, without_align_kernel) 
-		K_init = qml.kernels.square_kernel_matrix(x_train, without_align_kernel, assume_normalized_kernel=True)
+
 		without_align_svm = SVC(kernel = without_align_kernel_matrix).fit(x_train, y_train)
 
 		y_train_pred = without_align_svm.predict(x_train)

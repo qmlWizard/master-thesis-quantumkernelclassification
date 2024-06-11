@@ -197,6 +197,7 @@ print("Length of Data Set: ", len(X))
 
 init_kernel = lambda x1, x2: kernel(x1, x2, init_params)
 K_init = qml.kernels.square_kernel_matrix(X, init_kernel, assume_normalized_kernel=True)
+print(X.shape)
 
 
 with np.printoptions(precision=3, suppress=True):
