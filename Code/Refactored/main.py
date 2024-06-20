@@ -21,6 +21,13 @@ import time
 train_without_alignment = True
 train_classical_svm = True
 train_alignment = False
+
+test_accuracy = False
+train_size = 0.10
+
+training_layers = 6
+ansatz = 'efficient_su2'
+
 uncertinity_sampling = False
 sampling_type = 'entropy'
 
@@ -58,7 +65,7 @@ if __name__ == "__main__":
 		print("Error while Reading the file")
 		print(e)
 
-	x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=0.8, random_state=42)
+	x_train, x_test, y_train, y_test = train_test_split(x, y, train_size= train_size, random_state=42)
 
 	print("----------------------------------------------------------------------------------------------------")
 	time.sleep(2)
@@ -84,8 +91,8 @@ if __name__ == "__main__":
 
 	params = random_params(
 						   num_wires = len(wires), 
-						   num_layers = 1,
-						   ansatz = 'efficient_su2'
+						   num_layers = training_layers,
+						   ansatz = ansatz
 						  ) 
  
 	@qml.qnode(dev)
@@ -137,10 +144,11 @@ if __name__ == "__main__":
 		print("Training Complete.")
 		print(f"Training Accuracy: {training_accuracy * 100:.2f}%")
 		print("----------------------------------------------------------------------------------------------------")
-		print("Testing trained Support Vector Classifier... ")
-		y_test_pred = without_align_svm.predict(x_test)
-		testing_accuracy = accuracy_score(y_test, y_test_pred)
+		if test_accuracy:
+			print("Testing trained Support Vector Classifier... ")
+			y_test_pred = without_align_svm.predict(x_test)
+			testing_accuracy = accuracy_score(y_test, y_test_pred)
 
-		print(f"Testing Accuracy: {testing_accuracy * 100:.2f}%")
+			print(f"Testing Accuracy: {testing_accuracy * 100:.2f}%")
 
-		print("----------------------------------------------------------------------------------------------------")
+			print("----------------------------------------------------------------------------------------------------")
