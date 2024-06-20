@@ -1,4 +1,5 @@
 from pennylane import numpy as np
+from sklearn.svm import SVC
 
 def random_params(num_wires, num_layers, ansatz):
     if 'efficient_su2':
@@ -21,7 +22,7 @@ def uncertinity_sampling_subset(X, svm_trained, subSize, sampling = 'entropy', r
 
 			return sampled_indices
 		
-		elif sampling == 'probabilistic':
+		else:
 			probabilities = svm_trained.predict_proba(X)
 			entropy = -np.sum(probabilities * np.log(probabilities), axis=1)
 			selected_indices = np.argsort(entropy)[:subSize]
