@@ -40,5 +40,20 @@ def kernel_circuit(x1, x2, num_qubits, wires, params = np.asarray([])):
 		
 	return qml.probs(wires=wires)
 
-def kernel(x1, x2, params, wires, num_qubits):
-	return kernel_circuit(x1, x2, params, wires, num_qubits)[0]
+def kernel_without_ansatz(x1, x2, wires, num_qubits):
+	angle_encoding(
+						input_data = x1, 
+				  		num_qubits = num_qubits, 
+				  		wires = wires, 
+						gate = 'RZ', 
+						hadamard = True
+					   )
+	
+	adjoint_angle_encoding = qml.adjoint(variational_circuit)
+
+	adjoint_angle_encoding(
+						x = x2, 
+						num_qubits = num_qubits,
+						gate = 'RZ',
+						wires = wires
+						)
