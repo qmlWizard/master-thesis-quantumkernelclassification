@@ -25,7 +25,7 @@ train_with_alignment_greedy_sampling = True
 train_with_alignment_prob_greedy_sampling = True
 
 test_accuracy = False
-train_size = 0.10
+train_size = 0.80
 
 training_layers = 6
 ansatz = 'efficient_su2'
@@ -34,9 +34,9 @@ uncertinity_sampling = False
 sampling_type = 'entropy'
 
 classical_kernels = ['rbf', 'linear', 'poly']
-#subset_sizes = [4, 8, 16, 24, 48]
-subset_sizes = [4]
-file_name = "Experiment_1"
+subset_sizes = [4, 8, 16, 24, 48]
+
+file_name = "Experiment_1.txt"
 
 
 alignment_epochs = 10
