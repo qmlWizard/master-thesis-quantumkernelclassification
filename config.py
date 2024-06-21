@@ -15,5 +15,5 @@ train_config = {
     'subset_sizes': [4, 8, 16, 24, 48],
     'file_name': "Experiment_1.txt",
     'alignment_epochs': 10,
-	'multithreading':True
+	'multithreading':True,
 }
