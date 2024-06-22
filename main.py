@@ -14,36 +14,31 @@ from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
 from sklearn.metrics import accuracy_score, classification_report
+import threading
 
 import sys
 from datetime import datetime
 import time
 
-
-subset_sizes = [4, 8, 16, 24, 48]
-
-file_name = "Experiment_1.txt"
-
-
 alignment_epochs = 10
 
 def train(train_type = 'random', subset_size = 4, ranking = False):
 	
-	print("----------------------------------------------------------------------------------------------------", file=file)
+	
 	params = random_params(
 				num_wires = len(wires), 
 				num_layers = train_config['training_layers'],
 				ansatz = train_config['ansatz']
 				)
 				
-	print("Kernel Alignment with Gradient Descent for subset size: ", subset_size, file=file)
+	
 	params = params
 	opt = qml.GradientDescentOptimizer(0.2)
 
-	for i in range(alignment_epochs):
+	for i in range(train_config['alignment_epochs']):
 		if train_type == 'random':
 			subset = np.random.choice(list(range(len(x_train))), subset_size)
-		else:
+		elif train_type == 'greedy':
 			trained_kernel_greedy = lambda x1, x2: kernel(x1, x2, params)[0]
 			trained_kernel_matrix_greedy = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, trained_kernel_greedy)
 			svm_aligned_greedy = SVC(kernel=trained_kernel_matrix_greedy, probability=True).fit(x_train, y_train)
@@ -73,24 +68,20 @@ def train(train_type = 'random', subset_size = 4, ranking = False):
 													lambda x1, x2: kernel(x1, x2, params),
 													assume_normalized_kernel=True,
 												)
-			print(f"Step {i+1} - Alignment = {current_alignment:.3f}", file=file)
+			#print(f"Step {i+1} - Alignment = {current_alignment:.3f}")
 
 	trained_kernel = lambda x1, x2: kernel(x1, x2, params)[0]
 	trained_kernel_matrix = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, trained_kernel)
 	svm_aligned = SVC(kernel=trained_kernel_matrix).fit(x_train, y_train)
-	print("----------------------------------------------------------------------------------------------------", file=file)
+	
 
 	return svm_aligned
 
 if __name__ == "__main__":
 
-	with open(file_name, "w") as file:
-		print("Experiment 1", file=file)
-		if len(sys.argv) < 2:
-			print("Usage: python script.py <filepath>", file=file)
-			sys.exit(1)
-
-		print("----------------------------------------------------------------------------------------------------", file=file)
+	with open(train_config['file_name'], "w") as file:
+		print("Experiment 1")
+		print("----------------------------------------------------------------------------------------------------")
 		now = datetime.now()
 		current_hour = now.hour
 
@@ -102,43 +93,43 @@ if __name__ == "__main__":
 		else:
 			greeting = "Good evening"
 
-		print(f"{greeting}!", file=file)
+		print(f"{greeting}!")
 		formatted_datetime = now.strftime("%A, %d %B %Y at %H:%M:%S")
-		print(f"Today's date and time: {formatted_datetime}", file=file)
+		print(f"Today's date and time: {formatted_datetime}")
 
-		print("----------------------------------------------------------------------------------------------------", file=file)
+		print("----------------------------------------------------------------------------------------------------")
 
-		filepath = sys.argv[1]
-		dr = sys.argv[2]
-		dr_comp = int(sys.argv[3])
-		print('Reading the Data file ...', file=file)
+		filepath = train_config['training_dataset_path']
+		dr = train_config['dr_technique']
+		dr_comp = train_config['dr_components']
+		print('Reading the Data file ...')
 		try:
 			x, y = data_preprocess(path=filepath, dr_type=dr, dr_components=dr_comp, normalize=False)
 		except Exception as e:
-			print("Error while Reading the file", file=file)
+			print("Error while Reading the file")
 		
-			print(e, file=file)
+			print(e)
 
 		x_train, x_test, y_train, y_test = train_test_split(x, y, train_size= train_config['train_size'], random_state=42)
 
-		print("----------------------------------------------------------------------------------------------------", file=file)
+		print("----------------------------------------------------------------------------------------------------")
 		time.sleep(2)
-		print("Sample Data: ", file=file)
+		print("Sample Data: ")
 
 		cnt = 0
 		for i, j in zip(x, y):
 			if cnt == 5:
 				break
-			print("X: {} --> Y: {}".format(i, j), file=file)
+			print("X: {} --> Y: {}".format(i, j))
 			cnt += 1
 
 		num_qubits = len(x[0])
 		
-		print("----------------------------------------------------------------------------------------------------", file=file)
+		print("----------------------------------------------------------------------------------------------------")
 		time.sleep(2)
-		print("Creating Quantum Kernel Circuit...", file=file)
+		print("Creating Quantum Kernel Circuit...")
 
-		print("----------------------------------------------------------------------------------------------------", file=file)
+		print("----------------------------------------------------------------------------------------------------")
 
 		dev = qml.device("default.qubit", wires = num_qubits, shots = None)
 		wires = dev.wires.tolist()
@@ -158,38 +149,37 @@ if __name__ == "__main__":
 								num_qubits = num_qubits
 								)
 		
-		print("----------------------------------------------------------------------------------------------------", file=file)
+		print("----------------------------------------------------------------------------------------------------")
 		drawer = qml.draw(kernel)
 		print(drawer(x1 = x[0], x2 = x[1], params = params))
-		print("----------------------------------------------------------------------------------------------------", file=file)
-		print('Distance between 1st and 2nd Data Points', kernel(x1 = x[0], x2 = x[1], params = params)[0], file=file)
-		print("----------------------------------------------------------------------------------------------------", file=file)
+		print("----------------------------------------------------------------------------------------------------")
+		print('Distance between 1st and 2nd Data Points', kernel(x1 = x[0], x2 = x[1], params = params)[0])
+		print("----------------------------------------------------------------------------------------------------")
 
 		if train_config['train_classical_svm']:
-
-			print("Training Classical Support Vector Classifier... ", file=file)
-
+			print("Training Classical Support Vector Classifier... ")
 			for k in train_config['classical_kernels']:
-				print("Training SVM with {0} kernel".format(k.upper()), file=file)
+				print("Training SVM with {0} kernel".format(k.upper()))
 				classical_svm = SVC(kernel=k).fit(x_train, y_train)
 				y_train_pred = classical_svm.predict(x_train)
 				training_accuracy = accuracy_score(y_train, y_train_pred)
 
-				print("Training Complete.", file=file)
-				print(f"Classical Training Accuracy: {training_accuracy * 100:.2f}%", file=file)
+				print("Training Complete.")
+				print(f"Classical Training Accuracy: {training_accuracy * 100:.2f}%")
 				
-				print("Testing trained Classical Support Vector Classifier... ", file=file)
+				print("Testing trained Classical Support Vector Classifier... ")
 				y_test_pred = classical_svm.predict(x_test)
 				testing_accuracy = accuracy_score(y_test, y_test_pred)
 
-				print(f"Classical Testing Accuracy: {testing_accuracy * 100:.2f}%", file=file)
-				print("----------------------------------------------------------------------------------------------------", file=file)
-				print("----------------------------------------------------------------------------------------------------", file=file)
+				print(f"Classical Testing Accuracy: {testing_accuracy * 100:.2f}%")
+				print("----------------------------------------------------------------------------------------------------")
+				print("----------------------------------------------------------------------------------------------------")
 
+		threads = []
 
 		if train_config['train_without_alignment']:
 
-			print("Training Quantum Support Vector Classifier... ", file=file)
+			print("Training Quantum Support Vector Classifier... ")
 			without_align_kernel = lambda x1, x2: kernel(x1, x2, params)[0]
 			without_align_kernel_matrix = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, without_align_kernel) 
 
@@ -198,123 +188,41 @@ if __name__ == "__main__":
 			y_train_pred = without_align_svm.predict(x_train)
 			training_accuracy = accuracy_score(y_train, y_train_pred)
 
-			print("Training Complete.", file=file)
-			print(f"Training Accuracy: {training_accuracy * 100:.2f}%", file=file)
-			print("----------------------------------------------------------------------------------------------------", file=file)
+			print("Training Complete.")
+			print(f"Training Accuracy: {training_accuracy * 100:.2f}%")
+			print("----------------------------------------------------------------------------------------------------")
 			if train_config['test_accuracy']:
-				print("Testing trained Support Vector Classifier... ", file=file)
+				print("Testing trained Support Vector Classifier... ")
 				y_test_pred = without_align_svm.predict(x_test)
 				testing_accuracy = accuracy_score(y_test, y_test_pred)
 
-				print(f"Testing Accuracy: {testing_accuracy * 100:.2f}%", file=file)
+				print(f"Testing Accuracy: {testing_accuracy * 100:.2f}%")
 
-				print("----------------------------------------------------------------------------------------------------", file=file)
+				print("----------------------------------------------------------------------------------------------------")
 
 		
 		if train_config['train_with_alignment_random_sampling']:
-			for subset_size in subset_sizes:
-				pass
+			for subset_size in train_config['subset_sizes']:
+				thread = threading.Thread(target=train, args=('random', subset_size, False))
+				thread.start()
+				print("Tread Started with Random sampling and Subset Size {subset_size}")
+				threads.append(thread)
 			
 
 		if train_config['train_with_alignment_greedy_sampling']:	
 			for subset_size in train_config['subset_sizes']:
-				print("----------------------------------------------------------------------------------------------------", file=file)
-				params = random_params(
-							num_wires = len(wires), 
-							num_layers = train_config['training_layers'],
-							ansatz = train_config['ansatz']
-							)
+				thread = threading.Thread(target=train, args=('greedy', subset_size, False))
+				thread.start()
+				print("Tread Started with Greedy sampling without Ranking and Subset Size {subset_size}")
+				threads.append(thread)
 				
-				print("Kernel Alignment with Greedy Sub Sampling for subset size: ", subset_size, file=file)
-				opt = qml.GradientDescentOptimizer(0.2)
-
-				
-
-				for i in range(alignment_epochs):
-
-					trained_kernel_greedy = lambda x1, x2: kernel(x1, x2, params)[0]
-					trained_kernel_matrix_greedy = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, trained_kernel_greedy)
-					svm_aligned_greedy = SVC(kernel=trained_kernel_matrix_greedy, probability=True).fit(x_train, y_train)
-
-					subset = uncertinity_sampling_subset(
-															X = x_train, 
-															svm_trained=svm_aligned_greedy, 
-															subSize=subset_size,
-															ranking=True
-														)
-					# Define the cost function for optimization
-					cost = lambda _params: -target_alignment(
-						x_train[subset],
-						y_train[subset],
-						lambda x1, x2: kernel(x1, x2, _params),
-						assume_normalized_kernel=True,
-					)
-		
-					# Optimization step
-					params = opt.step(cost, params)
-
-					# Report the alignment on the full dataset every 50 steps.
-					if (i + 1) % 10 == 0:
-						current_alignment = target_alignment(
-																x_train,
-																y_train,
-																lambda x1, x2: kernel(x1, x2, params),
-																assume_normalized_kernel=True,
-															)
-						print(f"Step {i+1} - Alignment = {current_alignment:.3f}", file=file)
-
-				trained_kernel_greedy = lambda x1, x2: kernel(x1, x2, params)[0]
-				trained_kernel_matrix_greedy = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, trained_kernel_greedy)
-				svm_aligned_greedy = SVC(kernel=trained_kernel_matrix_greedy).fit(x_train, y_train)
-				print("----------------------------------------------------------------------------------------------------", file=file)
 		
 		if train_config['train_with_alignment_prob_greedy_sampling']:
-			for subset_size in subset_sizes:
-				print("----------------------------------------------------------------------------------------------------", file=file)
-				params = random_params(
-							num_wires = len(wires), 
-							num_layers = train_config['training_layers'],
-							ansatz = train_config['ansatz']
-							)
-				
-				print("Kernel Alignment with Probabilistic Sub Sampling for subset size: ", subset_size, file=file)
-				opt = qml.GradientDescentOptimizer(0.2)
+			for subset_size in train_config['subset_sizes']:
+				thread = threading.Thread(target=train, args=('greedy', subset_size, True))
+				thread.start()
+				print("Tread Started with Greedy sampling with Ranking and Subset Size {subset_size}")
+				threads.append(thread)
 
-				for i in range(alignment_epochs):
-
-					trained_kernel_greedy = lambda x1, x2: kernel(x1, x2, params)[0]
-					trained_kernel_matrix_greedy = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, trained_kernel_greedy)
-					svm_aligned_greedy = SVC(kernel=trained_kernel_matrix_greedy, probability=True).fit(x_train, y_train)
-
-					subset = uncertinity_sampling_subset(
-															X = x_train, 
-															svm_trained=svm_aligned_greedy, 
-															subSize=subset_size,
-															ranking=False
-														)
-					
-					# Define the cost function for optimization
-					cost = lambda _params: -target_alignment(
-						x_train[subset],
-						y_train[subset],
-						lambda x1, x2: kernel(x1, x2, _params),
-						assume_normalized_kernel=True,
-					)
-					
-					# Optimization step
-					params = opt.step(cost, params)
-
-					# Report the alignment on the full dataset every 50 steps.
-					if (i + 1) % 10 == 0:
-						current_alignment = target_alignment(
-																x_train,
-																y_train,
-																lambda x1, x2: kernel(x1, x2, params),
-																assume_normalized_kernel=True,
-															)
-						print(f"Step {i+1} - Alignment = {current_alignment:.3f}", file=file)
-
-				trained_kernel_greedy = lambda x1, x2: kernel(x1, x2, params)[0]
-				trained_kernel_matrix_greedy = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, trained_kernel_greedy)
-				svm_aligned_greedy = SVC(kernel=trained_kernel_matrix_greedy).fit(x_train, y_train)
-				print("----------------------------------------------------------------------------------------------------", file=file)
+		for thread in threads:
+			thread.join()

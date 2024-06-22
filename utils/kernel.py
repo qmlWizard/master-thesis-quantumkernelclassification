@@ -1,7 +1,7 @@
 import pennylane as qml
 from pennylane import numpy as np
-from encoding import angle_encoding
-from ansatz import efficient_su2, basic
+from utils.encoding import angle_encoding
+from utils.ansatz import efficient_su2, basic
 
 def variational_circuit(x, params, num_qubits, wires):
 
