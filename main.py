@@ -5,7 +5,7 @@ from utils.kernel_alignment import target_alignment
 from utils.encoding import angle_encoding
 from utils.ansatz import efficient_su2
 from utils.kernel import kernel_circuit
-from utils.utils import random_params, uncertinity_sampling_subset
+from utils.utils import random_params, uncertinity_sampling_subset, accuracy
 from config import train_config
 import pandas as pd
 import matplotlib as mpl
@@ -15,12 +15,14 @@ from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
 from sklearn.metrics import accuracy_score, classification_report
 import threading
+import logging
 
 import sys
 from datetime import datetime
 import time
 
 alignment_epochs = 10
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(threadName)s - %(levelname)s - %(message)s')
 
 def train(train_type = 'random', subset_size = 4, ranking = False):
 	
@@ -68,19 +70,21 @@ def train(train_type = 'random', subset_size = 4, ranking = False):
 													lambda x1, x2: kernel(x1, x2, params),
 													assume_normalized_kernel=True,
 												)
-			#print(f"Step {i+1} - Alignment = {current_alignment:.3f}")
+			print(f"Step {i+1} - Alignment = {current_alignment:.3f}")
 
 	trained_kernel = lambda x1, x2: kernel(x1, x2, params)[0]
 	trained_kernel_matrix = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, trained_kernel)
 	svm_aligned = SVC(kernel=trained_kernel_matrix).fit(x_train, y_train)
-	
 
-	return svm_aligned
+	accuracy_trained = accuracy(svm_aligned, x_train, y_train)
+	logging.info(f"Accuracy with {train_type} sampling with Ranking = {ranking} and subset Size = {subset_size} = {accuracy_trained}")
 
 if __name__ == "__main__":
 
 	with open(train_config['file_name'], "w") as file:
 		print("Experiment 1")
+		logging.info(f"Experiment 1")
+
 		print("----------------------------------------------------------------------------------------------------")
 		now = datetime.now()
 		current_hour = now.hour
@@ -107,20 +111,24 @@ if __name__ == "__main__":
 			x, y = data_preprocess(path=filepath, dr_type=dr, dr_components=dr_comp, normalize=False)
 		except Exception as e:
 			print("Error while Reading the file")
-		
 			print(e)
+			logging.info(f"Error while Reading the file")
+			logging.info(e)
 
 		x_train, x_test, y_train, y_test = train_test_split(x, y, train_size= train_config['train_size'], random_state=42)
 
 		print("----------------------------------------------------------------------------------------------------")
 		time.sleep(2)
 		print("Sample Data: ")
+		logging.info(f"Sample Data: ")
+		
 
 		cnt = 0
 		for i, j in zip(x, y):
 			if cnt == 5:
 				break
 			print("X: {} --> Y: {}".format(i, j))
+			logging.info("X: {} --> Y: {}".format(i, j))
 			cnt += 1
 
 		num_qubits = len(x[0])
@@ -128,10 +136,11 @@ if __name__ == "__main__":
 		print("----------------------------------------------------------------------------------------------------")
 		time.sleep(2)
 		print("Creating Quantum Kernel Circuit...")
+		logging.info("Creating Quantum Kernel Circuit...")
 
 		print("----------------------------------------------------------------------------------------------------")
 
-		dev = qml.device("default.qubit", wires = num_qubits, shots = None)
+		dev = qml.device("lighting.qubit", wires = num_qubits, shots = None)
 		wires = dev.wires.tolist()
 
 		params = random_params(
@@ -154,6 +163,7 @@ if __name__ == "__main__":
 		print(drawer(x1 = x[0], x2 = x[1], params = params))
 		print("----------------------------------------------------------------------------------------------------")
 		print('Distance between 1st and 2nd Data Points', kernel(x1 = x[0], x2 = x[1], params = params)[0])
+		logging.info('Distance between 1st and 2nd Data Points', kernel(x1 = x[0], x2 = x[1], params = params)[0])
 		print("----------------------------------------------------------------------------------------------------")
 
 		if train_config['train_classical_svm']:
@@ -166,12 +176,17 @@ if __name__ == "__main__":
 
 				print("Training Complete.")
 				print(f"Classical Training Accuracy: {training_accuracy * 100:.2f}%")
+				logging.info(f"Classical Training Accuracy ({k.upper()} Kernel): {training_accuracy * 100:.2f}%")
+				
 				
 				print("Testing trained Classical Support Vector Classifier... ")
 				y_test_pred = classical_svm.predict(x_test)
 				testing_accuracy = accuracy_score(y_test, y_test_pred)
 
 				print(f"Classical Testing Accuracy: {testing_accuracy * 100:.2f}%")
+				logging.info(f"Classical Testing Accuracy ({k.upper()} Kernel): {testing_accuracy * 100:.2f}%")
+				
+				
 				print("----------------------------------------------------------------------------------------------------")
 				print("----------------------------------------------------------------------------------------------------")
 
@@ -190,7 +205,10 @@ if __name__ == "__main__":
 
 			print("Training Complete.")
 			print(f"Training Accuracy: {training_accuracy * 100:.2f}%")
+			logging.info(f"Training Accuracy (without kernel alignment): {training_accuracy * 100:.2f}%")
+
 			print("----------------------------------------------------------------------------------------------------")
+			
 			if train_config['test_accuracy']:
 				print("Testing trained Support Vector Classifier... ")
 				y_test_pred = without_align_svm.predict(x_test)
@@ -199,7 +217,6 @@ if __name__ == "__main__":
 				print(f"Testing Accuracy: {testing_accuracy * 100:.2f}%")
 
 				print("----------------------------------------------------------------------------------------------------")
-
 		
 		if train_config['train_with_alignment_random_sampling']:
 			for subset_size in train_config['subset_sizes']:
@@ -207,7 +224,7 @@ if __name__ == "__main__":
 				thread.start()
 				print("Tread Started with Random sampling and Subset Size {subset_size}")
 				threads.append(thread)
-			
+		"""
 
 		if train_config['train_with_alignment_greedy_sampling']:	
 			for subset_size in train_config['subset_sizes']:
@@ -226,3 +243,4 @@ if __name__ == "__main__":
 
 		for thread in threads:
 			thread.join()
+		"""

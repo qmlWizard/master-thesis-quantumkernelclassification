@@ -30,3 +30,6 @@ def uncertinity_sampling_subset(X, svm_trained, subSize, sampling = 'entropy', r
 			return selected_indices
 	
 	return None
+
+def accuracy(classifier, X, Y_target):
+    return 1 - np.count_nonzero(classifier.predict(X) - Y_target) / len(Y_target)
