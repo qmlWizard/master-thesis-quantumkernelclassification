@@ -16,6 +16,7 @@ from sklearn import preprocessing
 from sklearn.metrics import accuracy_score, classification_report
 import threading
 import logging
+import concurrent.futures
 
 import sys
 from datetime import datetime
@@ -140,7 +141,7 @@ if __name__ == "__main__":
 
 		print("----------------------------------------------------------------------------------------------------")
 
-		dev = qml.device("lighting.qubit", wires = num_qubits, shots = None)
+		dev = qml.device("default.qubit", wires = num_qubits, shots = None)
 		wires = dev.wires.tolist()
 
 		params = random_params(
@@ -151,12 +152,12 @@ if __name__ == "__main__":
 	
 		@qml.qnode(dev)
 		def kernel(x1, x2, params):
-			return kernel_circuit(x1 = x1, 
-								x2 = x2, 
-								params = params, 
-								wires = wires, 
-								num_qubits = num_qubits
-								)
+			return kernel_circuit(  x1 = x1, 
+						x2 = x2, 
+						params = params, 
+						wires = wires, 
+						num_qubits = num_qubits
+					     )
 		
 		print("----------------------------------------------------------------------------------------------------")
 		drawer = qml.draw(kernel)
@@ -195,8 +196,37 @@ if __name__ == "__main__":
 		if train_config['train_without_alignment']:
 
 			print("Training Quantum Support Vector Classifier... ")
+
 			without_align_kernel = lambda x1, x2: kernel(x1, x2, params)[0]
 			without_align_kernel_matrix = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, without_align_kernel) 
+
+			def compute_kernel_matrix_element(i, j, X1, X2):
+				return without_align_kernel(X1[i], X2[j])
+
+				# Parallelize the computation of the kernel matrix
+			def parallel_kernel_matrix(X1, X2):
+				n1, n2 = len(X1), len(X2)
+				kernel_matrix = np.zeros((n1, n2))
+				
+				with concurrent.futures.ThreadPoolExecutor() as executor:
+					futures = {
+					(i, j): executor.submit(compute_kernel_matrix_element, i, j, X1, X2)
+					for i in range(n1) for j in range(n2)
+					}
+					
+					for (i, j), future in futures.items():
+						kernel_matrix[i, j] = future.result()
+				
+				return kernel_matrix
+			print('-------------------------------------------------------------------')
+			k = qml.kernels.square_kernel_matrix(x_train, without_align_kernel, assume_normalized_kernel=True)
+			with np.printoptions(precision=3, suppress=True):
+				print(k)
+			print('-------------------------------------------------------------------')
+			ki = parallel_kernel_matrix(x_train, x_train)
+			with np.printoptions(precision=3, suppress=True):
+				print(ki)
+			print('-------------------------------------------------------------------')
 
 			without_align_svm = SVC(kernel = without_align_kernel_matrix).fit(x_train, y_train)
 
@@ -220,10 +250,12 @@ if __name__ == "__main__":
 		
 		if train_config['train_with_alignment_random_sampling']:
 			for subset_size in train_config['subset_sizes']:
-				thread = threading.Thread(target=train, args=('random', subset_size, False))
-				thread.start()
-				print("Tread Started with Random sampling and Subset Size {subset_size}")
-				threads.append(thread)
+				train('random', subset_size, False)
+				
+				#thread = threading.Thread(target=train, args=('random', subset_size, False))
+				#thread.start()
+				#print("Tread Started with Random sampling and Subset Size {subset_size}")
+				#threads.append(thread)
 		"""
 
 		if train_config['train_with_alignment_greedy_sampling']:	
