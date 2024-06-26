@@ -251,28 +251,3 @@ if __name__ == "__main__":
 		if train_config['train_with_alignment_random_sampling']:
 			for subset_size in train_config['subset_sizes']:
 				train('random', subset_size, False)
-				
-				#thread = threading.Thread(target=train, args=('random', subset_size, False))
-				#thread.start()
-				#print("Tread Started with Random sampling and Subset Size {subset_size}")
-				#threads.append(thread)
-		"""
-
-		if train_config['train_with_alignment_greedy_sampling']:	
-			for subset_size in train_config['subset_sizes']:
-				thread = threading.Thread(target=train, args=('greedy', subset_size, False))
-				thread.start()
-				print("Tread Started with Greedy sampling without Ranking and Subset Size {subset_size}")
-				threads.append(thread)
-				
-		
-		if train_config['train_with_alignment_prob_greedy_sampling']:
-			for subset_size in train_config['subset_sizes']:
-				thread = threading.Thread(target=train, args=('greedy', subset_size, True))
-				thread.start()
-				print("Tread Started with Greedy sampling with Ranking and Subset Size {subset_size}")
-				threads.append(thread)
-
-		for thread in threads:
-			thread.join()
-		"""
