@@ -47,11 +47,11 @@ def train(train_type = 'random', subset_size = 4, ranking = False):
 			svm_aligned_greedy = SVC(kernel=trained_kernel_matrix_greedy, probability=True).fit(x_train, y_train)
 
 			subset = uncertinity_sampling_subset(
-													X = x_train, 
-													svm_trained=svm_aligned_greedy, 
-													subSize=subset_size,
-													ranking=ranking
-												)
+								X = x_train, 
+								svm_trained=svm_aligned_greedy, 
+								subSize=subset_size,
+								ranking=ranking
+							    )
 		
 		# Define the cost function for optimization
 		cost = lambda _params: -target_alignment(
@@ -66,11 +66,11 @@ def train(train_type = 'random', subset_size = 4, ranking = False):
 		# Report the alignment on the full dataset every 50 steps.
 		if (i + 1) % 10 == 0:
 			current_alignment = target_alignment(
-													x_train,
-													y_train,
-													lambda x1, x2: kernel(x1, x2, params),
-													assume_normalized_kernel=True,
-												)
+								x_train,
+								y_train,
+								lambda x1, x2: kernel(x1, x2, params),
+								assume_normalized_kernel=True,
+							   )
 			print(f"Step {i+1} - Alignment = {current_alignment:.3f}")
 
 	trained_kernel = lambda x1, x2: kernel(x1, x2, params)[0]
