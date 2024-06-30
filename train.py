@@ -200,30 +200,38 @@ if __name__ == "__main__":
 			without_align_kernel = lambda x1, x2: kernel(x1, x2, params)[0]
 			without_align_kernel_matrix = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, without_align_kernel) 
 
-			def compute_kernel_matrix_element(i, j, X1, X2):
-				return without_align_kernel(X1[i], X2[j])
+			def compute_kernel_matrix_element(X1, X2):
+				return without_align_kernel(X1, X2)
+
+			def worker(pairs):
+				result = compute_kernel_matrix_element(pairs[0], pairs[1])
+				i, j = pairs[2], pairs[3]
+				return (result, i, j)
+
 
 				# Parallelize the computation of the kernel matrix
-			def parallel_kernel_matrix(X1, X2):
-				n1, n2 = len(X1), len(X2)
-				kernel_matrix = np.zeros((n1, n2))
-				
+			def parallel_kernel_matrix(X):
+				print("Length of Data: ", len(X))
+				pairs = []
+				kernel_matrix = np.zeros((len(X), len(X)))
+
+				for i in range(len(X)):
+					for j in range(len(X)):
+						pairs.append((X[i], X[j], i, j))
+
 				with concurrent.futures.ThreadPoolExecutor() as executor:
-					futures = {
-					(i, j): executor.submit(compute_kernel_matrix_element, i, j, X1, X2)
-					for i in range(n1) for j in range(n2)
-					}
-					
-					for (i, j), future in futures.items():
-						kernel_matrix[i, j] = future.result()
+					futures = {executor.submit(worker, pair) for pair in pairs}
+					for future in concurrent.futures.as_completed(futures):
+						kernel_value, i, j = future.result()
+						kernel_matrix[i][j] = kernel_value		
 				
 				return kernel_matrix
 			print('-------------------------------------------------------------------')
-			k = qml.kernels.square_kernel_matrix(x_train, without_align_kernel, assume_normalized_kernel=True)
-			with np.printoptions(precision=3, suppress=True):
-				print(k)
+			#k = qml.kernels.square_kernel_matrix(x_train, without_align_kernel, assume_normalized_kernel=True)
+			#with np.printoptions(precision=3, suppress=True):
+		#		print(k)
 			print('-------------------------------------------------------------------')
-			ki = parallel_kernel_matrix(x_train, x_train)
+			ki = parallel_kernel_matrix(x_train)
 			with np.printoptions(precision=3, suppress=True):
 				print(ki)
 			print('-------------------------------------------------------------------')
