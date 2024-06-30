@@ -57,3 +57,11 @@ def kernel_without_ansatz(x1, x2, wires, num_qubits):
 						gate = 'RZ',
 						wires = wires
 						)
+
+def kernel_matrix_parallel(x, kernel):
+	#Prepare the pairs 
+	#Parallelise them on different threads
+	#return the cosine similarity
+
+	kernel_matrix = None
+	return kernel_matrix

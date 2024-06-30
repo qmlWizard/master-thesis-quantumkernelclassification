@@ -1,8 +1,12 @@
 import multiprocessing
 import numpy as np
 
+##Cosine SIMILARITY
+
+
+
 def kernel(x1, x2):
-    return np.dot(x1, x2)
+    return np.dot(x1, x2) / (x1 * x2)
 
 def worker(pairs, result_queue):
     for p in pairs:
@@ -18,16 +22,19 @@ if __name__ == "__main__":
 
     num_processes = 2  # Number of processes to run
 
-    matrix = np.asarray([1, 2, 3, 1])
+    matrix = np.asarray([11, 20, 300, 0.1, 1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1, 1, 2, 3, 1])
     kernel_matrix = np.zeros((len(matrix), len(matrix)))
+
+    print(len(matrix))
 
     pairs = []
     for i in range(len(matrix)):
         for j in range(len(matrix)):
-            print(f"Matrix Index = i:{i} j:{j}, and pair: {(matrix[i], matrix[j])}")
-            pairs.append((matrix[i], matrix[j], i, j))  # Store the indices along with the pairs
+            pairs.append((matrix[i], matrix[j], i, j))
 
     chunk_size = len(pairs) // num_processes
+
+    print(chunk_size)
 
     for i in range(num_processes):
         start = i * chunk_size
@@ -41,4 +48,8 @@ if __name__ == "__main__":
 
     while not result_queue.empty():
         i, j, result = result_queue.get()
+        kernel_matrix[i][j] = result
         print(f"Matrix Index = i:{i} j:{j}, and pair result: {result}")
+
+    with np.printoptions(precision=3, suppress=True):
+        print(kernel_matrix)
