@@ -25,7 +25,7 @@ import time
 alignment_epochs = 10
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(threadName)s - %(levelname)s - %(message)s')
 
-def train(train_type = 'random', subset_size = 4, ranking = False):
+def train(kernel, train_type = 'random', subset_size = 4, ranking = False):
 	
 	
 	params = random_params(
@@ -40,8 +40,10 @@ def train(train_type = 'random', subset_size = 4, ranking = False):
 
 	cost_list = []
 	for i in range(train_config['alignment_epochs']):
+		
 		if train_type == 'random':
 			subset = np.random.choice(list(range(len(x_train))), subset_size)
+		
 		elif train_type == 'greedy':
 			trained_kernel_greedy = lambda x1, x2: kernel(x1, x2, params)[0]
 			trained_kernel_matrix_greedy = lambda X1, X2: kernel_matrix(X1, X2, trained_kernel_greedy)
@@ -58,7 +60,7 @@ def train(train_type = 'random', subset_size = 4, ranking = False):
 		cost = lambda _params: -target_alignment(
 			x_train[subset],
 			y_train[subset],
-			lambda x1, x2: kernel(x1, x2, _params),
+			lambda x1, x2: kernel(x1, x2, _params)[0],
 			assume_normalized_kernel=True,
 		)
 
@@ -71,7 +73,7 @@ def train(train_type = 'random', subset_size = 4, ranking = False):
 			current_alignment = target_alignment(
 								x_train,
 								y_train,
-								lambda x1, x2: kernel(x1, x2, params),
+								lambda x1, x2: kernel(x1, x2, params)[0],
 								assume_normalized_kernel=True,
 							   )
 			print(f"Step {i+1} - Alignment = {current_alignment:.3f}")
@@ -172,7 +174,6 @@ if __name__ == "__main__":
 		print(drawer(x1 = x[0], x2 = x[1], params = params))
 		print("----------------------------------------------------------------------------------------------------")
 		print('Distance between 1st and 2nd Data Points', kernel(x1 = x[0], x2 = x[1], params = params)[0])
-		logging.info('Distance between 1st and 2nd Data Points', kernel(x1 = x[0], x2 = x[1], params = params)[0])
 		print("----------------------------------------------------------------------------------------------------")
 
 		if train_config['train_classical_svm']:
@@ -232,12 +233,14 @@ if __name__ == "__main__":
 				print(f"Testing Accuracy: {testing_accuracy * 100:.2f}%")
 
 				print("----------------------------------------------------------------------------------------------------")
+
+		
 		
 
 		for subset_method in train_config['quantum_alignments']:
 			for ranking_method in train_config['ranking']:
 				for subset_size in train_config['subset_sizes']:
-					training_accuracy, testing_accuracy, cost_list = train('random', subset_size, False)
+					training_accuracy, testing_accuracy, cost_list = train(kernel, 'random', subset_size, False)
 					save_dict = {	
 							'subset_method': subset_method,
 							'ranking_method': ranking_method,
