@@ -4,7 +4,7 @@ from utils.data_preprocessing import data_preprocess
 from utils.kernel_alignment import target_alignment
 from utils.encoding import angle_encoding
 from utils.ansatz import efficient_su2
-from utils.kernel import kernel_circuit
+from utils.kernel import kernel_circuit, square_kernel_matrix, kernel_matrix
 from utils.utils import random_params, uncertinity_sampling_subset, accuracy
 from config import train_config
 import pandas as pd
@@ -43,15 +43,15 @@ def train(train_type = 'random', subset_size = 4, ranking = False):
 			subset = np.random.choice(list(range(len(x_train))), subset_size)
 		elif train_type == 'greedy':
 			trained_kernel_greedy = lambda x1, x2: kernel(x1, x2, params)[0]
-			trained_kernel_matrix_greedy = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, trained_kernel_greedy)
+			trained_kernel_matrix_greedy = lambda X1, X2: kernel_matrix(X1, X2, trained_kernel_greedy)
 			svm_aligned_greedy = SVC(kernel=trained_kernel_matrix_greedy, probability=True).fit(x_train, y_train)
 
 			subset = uncertinity_sampling_subset(
-													X = x_train, 
-													svm_trained=svm_aligned_greedy, 
-													subSize=subset_size,
-													ranking=ranking
-												)
+								X = x_train, 
+								svm_trained=svm_aligned_greedy, 
+								subSize=subset_size,
+								ranking=ranking
+							    )
 		
 		# Define the cost function for optimization
 		cost = lambda _params: -target_alignment(
@@ -66,15 +66,15 @@ def train(train_type = 'random', subset_size = 4, ranking = False):
 		# Report the alignment on the full dataset every 50 steps.
 		if (i + 1) % 10 == 0:
 			current_alignment = target_alignment(
-													x_train,
-													y_train,
-													lambda x1, x2: kernel(x1, x2, params),
-													assume_normalized_kernel=True,
-												)
+								x_train,
+								y_train,
+								lambda x1, x2: kernel(x1, x2, params),
+								assume_normalized_kernel=True,
+							   )
 			print(f"Step {i+1} - Alignment = {current_alignment:.3f}")
 
 	trained_kernel = lambda x1, x2: kernel(x1, x2, params)[0]
-	trained_kernel_matrix = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, trained_kernel)
+	trained_kernel_matrix = lambda X1, X2: kernel_matrix(X1, X2, trained_kernel)
 	svm_aligned = SVC(kernel=trained_kernel_matrix).fit(x_train, y_train)
 
 	accuracy_trained = accuracy(svm_aligned, x_train, y_train)
@@ -200,33 +200,10 @@ if __name__ == "__main__":
 			without_align_kernel = lambda x1, x2: kernel(x1, x2, params)[0]
 			without_align_kernel_matrix = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, without_align_kernel) 
 
-			def compute_kernel_matrix_element(i, j, X1, X2):
-				return without_align_kernel(X1[i], X2[j])
-
-				# Parallelize the computation of the kernel matrix
-			def parallel_kernel_matrix(X1, X2):
-				n1, n2 = len(X1), len(X2)
-				kernel_matrix = np.zeros((n1, n2))
-				
-				with concurrent.futures.ThreadPoolExecutor() as executor:
-					futures = {
-					(i, j): executor.submit(compute_kernel_matrix_element, i, j, X1, X2)
-					for i in range(n1) for j in range(n2)
-					}
-					
-					for (i, j), future in futures.items():
-						kernel_matrix[i, j] = future.result()
-				
-				return kernel_matrix
 			print('-------------------------------------------------------------------')
-			k = qml.kernels.square_kernel_matrix(x_train, without_align_kernel, assume_normalized_kernel=True)
+			k = square_kernel_matrix(x_train, without_align_kernel, assume_normalized_kernel=True)
 			with np.printoptions(precision=3, suppress=True):
 				print(k)
-			print('-------------------------------------------------------------------')
-			ki = parallel_kernel_matrix(x_train, x_train)
-			with np.printoptions(precision=3, suppress=True):
-				print(ki)
-			print('-------------------------------------------------------------------')
 
 			without_align_svm = SVC(kernel = without_align_kernel_matrix).fit(x_train, y_train)
 
@@ -250,29 +227,4 @@ if __name__ == "__main__":
 		
 		if train_config['train_with_alignment_random_sampling']:
 			for subset_size in train_config['subset_sizes']:
-				train('random', subset_size, False)
-				
-				#thread = threading.Thread(target=train, args=('random', subset_size, False))
-				#thread.start()
-				#print("Tread Started with Random sampling and Subset Size {subset_size}")
-				#threads.append(thread)
-		"""
-
-		if train_config['train_with_alignment_greedy_sampling']:	
-			for subset_size in train_config['subset_sizes']:
-				thread = threading.Thread(target=train, args=('greedy', subset_size, False))
-				thread.start()
-				print("Tread Started with Greedy sampling without Ranking and Subset Size {subset_size}")
-				threads.append(thread)
-				
-		
-		if train_config['train_with_alignment_prob_greedy_sampling']:
-			for subset_size in train_config['subset_sizes']:
-				thread = threading.Thread(target=train, args=('greedy', subset_size, True))
-				thread.start()
-				print("Tread Started with Greedy sampling with Ranking and Subset Size {subset_size}")
-				threads.append(thread)
-
-		for thread in threads:
-			thread.join()
-		"""
+				train('greedy', subset_size, False)
