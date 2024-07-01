@@ -80,6 +80,11 @@ def train(train_type = 'random', subset_size = 4, ranking = False):
 	accuracy_trained = accuracy(svm_aligned, x_train, y_train)
 	logging.info(f"Accuracy with {train_type} sampling with Ranking = {ranking} and subset Size = {subset_size} = {accuracy_trained}")
 
+	y_test_pred = svm_aligned.predict(x_test)
+	testing_accuracy = accuracy_score(y_test, y_test_pred)
+
+	return accuracy_trained
+
 if __name__ == "__main__":
 
 	with open(train_config['file_name'], "w") as file:
@@ -227,4 +232,4 @@ if __name__ == "__main__":
 		
 		if train_config['train_with_alignment_random_sampling']:
 			for subset_size in train_config['subset_sizes']:
-				train('greedy', subset_size, False)
+				train('random', subset_size, False)
