@@ -38,6 +38,7 @@ def train(train_type = 'random', subset_size = 4, ranking = False):
 	params = params
 	opt = qml.GradientDescentOptimizer(0.2)
 
+	cost_list = []
 	for i in range(train_config['alignment_epochs']):
 		if train_type == 'random':
 			subset = np.random.choice(list(range(len(x_train))), subset_size)
@@ -60,10 +61,12 @@ def train(train_type = 'random', subset_size = 4, ranking = False):
 			lambda x1, x2: kernel(x1, x2, _params),
 			assume_normalized_kernel=True,
 		)
+
 		# Optimization step
 		params = opt.step(cost, params)
+		cost_list.append(cost)
 
-		# Report the alignment on the full dataset every 50 steps.
+		# Report the alignment on the full dataset every 10 steps.
 		if (i + 1) % 10 == 0:
 			current_alignment = target_alignment(
 								x_train,
@@ -80,10 +83,10 @@ def train(train_type = 'random', subset_size = 4, ranking = False):
 	accuracy_trained = accuracy(svm_aligned, x_train, y_train)
 	logging.info(f"Accuracy with {train_type} sampling with Ranking = {ranking} and subset Size = {subset_size} = {accuracy_trained}")
 
-	y_test_pred = svm_aligned.predict(x_test)
+	y_test_pred = without_align_svm.predict(x_test)
 	testing_accuracy = accuracy_score(y_test, y_test_pred)
 
-	return accuracy_trained
+	return training_accuracy, testing_accuracy, cost_list
 
 if __name__ == "__main__":
 
@@ -230,6 +233,22 @@ if __name__ == "__main__":
 
 				print("----------------------------------------------------------------------------------------------------")
 		
-		if train_config['train_with_alignment_random_sampling']:
-			for subset_size in train_config['subset_sizes']:
-				train('random', subset_size, False)
+
+		for subset_method in train_config['quantum_alignments']:
+			for ranking_method in train_config['ranking']:
+				for subset_size in train_config['subset_sizes']:
+					training_accuracy, testing_accuracy, cost_list = train('random', subset_size, False)
+					save_dict = {	
+							'subset_method': subset_method,
+							'ranking_method': ranking_method,
+							'subset_size': subset_size,
+							'training_accuracy': training_accuracy, 
+							'testing_accuracy': testing_accuracy, 
+							'cost_list': [cost_list]
+						    } 
+					fname = subset_method + ' ' + ranking_method + ' ' + subset_size + '.csv'
+
+					df = pd.DataFrame(save_dict)
+					df.to_csv(fname)
+
+					

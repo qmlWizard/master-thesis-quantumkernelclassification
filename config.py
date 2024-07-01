@@ -14,6 +14,8 @@ train_config = {
     'uncertainty_sampling': False,
     'sampling_type': 'entropy',
     'classical_kernels': ['rbf', 'linear', 'poly'],
+    'quantum_alignments': ['random', 'greedy'],
+    'ranking': [True, False],
     'subset_sizes': [4, 8, 16, 24, 48],
     'file_name': "Experiment_1.txt",
     'alignment_epochs': 100,

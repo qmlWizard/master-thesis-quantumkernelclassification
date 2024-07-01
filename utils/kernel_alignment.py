@@ -1,5 +1,6 @@
 import pennylane as qml
 from pennylane import numpy as np
+from utils.kernel import square_kernel_matrix
 
 def target_alignment(
     X,
@@ -9,7 +10,7 @@ def target_alignment(
     rescale_class_labels=True,
 ):
 
-    K = qml.kernels.square_kernel_matrix(
+    K = square_kernel_matrix(
         X,
         kernel,
         assume_normalized_kernel=assume_normalized_kernel,
