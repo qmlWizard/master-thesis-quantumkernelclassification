@@ -4,7 +4,7 @@ from utils.data_preprocessing import data_preprocess
 from utils.kernel_alignment import target_alignment
 from utils.encoding import angle_encoding
 from utils.ansatz import efficient_su2
-from utils.kernel import kernel_circuit
+from utils.kernel import kernel_circuit, square_kernel_matrix, kernel_matrix
 from utils.utils import random_params, uncertinity_sampling_subset, accuracy
 from config import train_config
 import pandas as pd
@@ -43,7 +43,7 @@ def train(train_type = 'random', subset_size = 4, ranking = False):
 			subset = np.random.choice(list(range(len(x_train))), subset_size)
 		elif train_type == 'greedy':
 			trained_kernel_greedy = lambda x1, x2: kernel(x1, x2, params)[0]
-			trained_kernel_matrix_greedy = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, trained_kernel_greedy)
+			trained_kernel_matrix_greedy = lambda X1, X2: kernel_matrix(X1, X2, trained_kernel_greedy)
 			svm_aligned_greedy = SVC(kernel=trained_kernel_matrix_greedy, probability=True).fit(x_train, y_train)
 
 			subset = uncertinity_sampling_subset(
@@ -74,7 +74,7 @@ def train(train_type = 'random', subset_size = 4, ranking = False):
 			print(f"Step {i+1} - Alignment = {current_alignment:.3f}")
 
 	trained_kernel = lambda x1, x2: kernel(x1, x2, params)[0]
-	trained_kernel_matrix = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, trained_kernel)
+	trained_kernel_matrix = lambda X1, X2: kernel_matrix(X1, X2, trained_kernel)
 	svm_aligned = SVC(kernel=trained_kernel_matrix).fit(x_train, y_train)
 
 	accuracy_trained = accuracy(svm_aligned, x_train, y_train)
@@ -200,41 +200,10 @@ if __name__ == "__main__":
 			without_align_kernel = lambda x1, x2: kernel(x1, x2, params)[0]
 			without_align_kernel_matrix = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, without_align_kernel) 
 
-			def compute_kernel_matrix_element(X1, X2):
-				return without_align_kernel(X1, X2)
-
-			def worker(pairs):
-				result = compute_kernel_matrix_element(pairs[0], pairs[1])
-				i, j = pairs[2], pairs[3]
-				return (result, i, j)
-
-
-				# Parallelize the computation of the kernel matrix
-			def parallel_kernel_matrix(X):
-				print("Length of Data: ", len(X))
-				pairs = []
-				kernel_matrix = np.zeros((len(X), len(X)))
-
-				for i in range(len(X)):
-					for j in range(len(X)):
-						pairs.append((X[i], X[j], i, j))
-
-				with concurrent.futures.ThreadPoolExecutor() as executor:
-					futures = {executor.submit(worker, pair) for pair in pairs}
-					for future in concurrent.futures.as_completed(futures):
-						kernel_value, i, j = future.result()
-						kernel_matrix[i][j] = kernel_value		
-				
-				return kernel_matrix
 			print('-------------------------------------------------------------------')
-			#k = qml.kernels.square_kernel_matrix(x_train, without_align_kernel, assume_normalized_kernel=True)
-			#with np.printoptions(precision=3, suppress=True):
-		#		print(k)
-			print('-------------------------------------------------------------------')
-			ki = parallel_kernel_matrix(x_train)
+			k = square_kernel_matrix(x_train, without_align_kernel, assume_normalized_kernel=True)
 			with np.printoptions(precision=3, suppress=True):
-				print(ki)
-			print('-------------------------------------------------------------------')
+				print(k)
 
 			without_align_svm = SVC(kernel = without_align_kernel_matrix).fit(x_train, y_train)
 
@@ -258,4 +227,4 @@ if __name__ == "__main__":
 		
 		if train_config['train_with_alignment_random_sampling']:
 			for subset_size in train_config['subset_sizes']:
-				train('random', subset_size, False)
+				train('greedy', subset_size, False)
