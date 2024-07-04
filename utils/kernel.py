@@ -103,7 +103,7 @@ def square_kernel_matrix(X, kernel, assume_normalized_kernel=False):
     else:
         # Fill the diagonal by computing the corresponding kernel values
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = {executor.submit(compute_kernel, i, i): i for i in range(N)}
+            futures = {executor.submit(compute_kernel , i, i): i for i in range(N)}
             for future in concurrent.futures.as_completed(futures):
                 i = futures[future]
                 matrix[N * i + i] = future.result()
@@ -114,16 +114,7 @@ def square_kernel_matrix(X, kernel, assume_normalized_kernel=False):
 
 
 def kernel_matrix(X1, X2, kernel):
-    r"""Computes the matrix of pairwise kernel values for two given datasets.
 
-    Args:
-        X1 (list[datapoint]): List of datapoints (first argument)
-        X2 (list[datapoint]): List of datapoints (second argument)
-        kernel ((datapoint, datapoint) -> float): Kernel function that maps datapoints to kernel value.
-
-    Returns:
-        array[float]: The matrix of kernel values.
-    """
     N = qml.math.shape(X1)[0]
     M = qml.math.shape(X2)[0]
 

@@ -85,10 +85,10 @@ def train(kernel, train_type = 'random', subset_size = 4, ranking = False):
 	accuracy_trained = accuracy(svm_aligned, x_train, y_train)
 	logging.info(f"Accuracy with {train_type} sampling with Ranking = {ranking} and subset Size = {subset_size} = {accuracy_trained}")
 
-	y_test_pred = without_align_svm.predict(x_test)
+	y_test_pred = svm_aligned.predict(x_test)
 	testing_accuracy = accuracy_score(y_test, y_test_pred)
 
-	return training_accuracy, testing_accuracy, cost_list
+	return accuracy_trained, testing_accuracy, cost_list
 
 if __name__ == "__main__":
 
@@ -235,8 +235,9 @@ if __name__ == "__main__":
 				print("----------------------------------------------------------------------------------------------------")
 
 		
-		
+		training_accuracy, testing_accuracy, cost_list = train(kernel, 'random', 8, False)
 
+		"""
 		for subset_method in train_config['quantum_alignments']:
 			for ranking_method in train_config['ranking']:
 				for subset_size in train_config['subset_sizes']:
@@ -249,9 +250,9 @@ if __name__ == "__main__":
 							'testing_accuracy': testing_accuracy, 
 							'cost_list': [cost_list]
 						    } 
-					fname = subset_method + ' ' + ranking_method + ' ' + subset_size + '.csv'
+					fname = subset_method + '_' + str(ranking_method) + '_' + str(subset_size) + '.csv'
 
 					df = pd.DataFrame(save_dict)
 					df.to_csv(fname)
-
+		"""
 					
