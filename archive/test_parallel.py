@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     num_processes = 2  # Number of processes to run
 
-    matrix = np.random.rand(1000)
+    matrix = np.random.rand(10000)
     kernel_matrix = np.zeros((len(matrix), len(matrix)))
 
     print(len(matrix))
