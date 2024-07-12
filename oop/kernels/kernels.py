@@ -12,10 +12,11 @@ wires = dev.wires.tolist()
 class kernel:
 
     def __init__(self, encoding_type, ansatz_type, num_qubits, num_wires):
-        self.encoding_type
-        self.ansatz_type
-        self.num_qubits
-        self.num_wires
+        
+        self.encoding_type = encoding_type
+        self.ansatz_type = ansatz_type
+        self.num_qubits = num_qubits
+        self.wires = num_wires
 
     def encoding(self, input_data, wires, gate = 'RZ', input_scaling_param = 1, input_scaling = False, hadamard = True):
         
@@ -50,14 +51,31 @@ class kernel:
                 qml.RX(params[0, i, 2], wires=wires[i])
                 qml.RY(params[0, i, 3], wires=wires[i])
 
-    def random_parameters(self):
-        pass
-    
-    def sampling(self):
-        pass
+    def random_parameters(self, num_layers, num_wires):
+        return np.random.uniform(0, 2 * np.pi, (2, num_layers + 1, 2, num_wires, 4), requires_grad=True)
 
-    def uncertinity_sampling(self):
-        pass
+    def uncertinity_sampling(self, X, svm_trained, subSize, sampling = 'entropy', ranking = False):
+        if sampling == 'entropy':
+            if ranking:
+                probabilities = svm_trained.predict_proba(X)
+                entropy = -np.sum(probabilities * np.log(probabilities), axis=1)
+            
+                sorted_indices = np.argsort(entropy)
+                sorted_entropy_values = np.sort(entropy)
+
+                probabilities = np.linspace(1, 0, len(entropy))
+                probabilities = probabilities / probabilities.sum()
+
+                sampled_indices = np.random.choice(sorted_indices, size=subSize, p=probabilities)
+
+                return sampled_indices
+            
+            else:
+                probabilities = svm_trained.predict_proba(X)
+                entropy = -np.sum(probabilities * np.log(probabilities), axis=1)
+                selected_indices = np.argsort(entropy)[:subSize]
+
+                return selected_indices
 
     def variational_circuit(self, x, params, num_qubits, wires):
         layers = len(params) - 1
@@ -94,9 +112,4 @@ class kernel:
                             )
             
         return qml.probs(wires=wires)
-    
-    @qml.qnode(dev)
-    def kernel(self, x1, x2, params):
-        return self.kernel_circuit(x1=x1, x2=x2, params=params, self.wires, self.num_qubits)
-
     

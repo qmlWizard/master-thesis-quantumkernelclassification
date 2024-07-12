@@ -63,20 +63,9 @@ def kernel_without_ansatz(x1, x2, wires, num_qubits):
 
 
 def square_kernel_matrix(X, kernel, assume_normalized_kernel=False):
-    r"""Computes the square matrix of pairwise kernel values for a given dataset.
 
-    Args:
-        X (list[datapoint]): List of datapoints
-        kernel ((datapoint, datapoint) -> float): Kernel function that maps
-            datapoints to kernel value.
-        assume_normalized_kernel (bool, optional): Assume that the kernel is normalized, in
-            which case the diagonal of the kernel matrix is set to 1, avoiding unnecessary
-            computations.
-
-    Returns:
-        array[float]: The square matrix of kernel values.
-    """
     N = qml.math.shape(X)[0]
+    
     if assume_normalized_kernel and N == 1:
         return qml.math.eye(1, like=qml.math.get_interface(X))
 
@@ -86,7 +75,6 @@ def square_kernel_matrix(X, kernel, assume_normalized_kernel=False):
         return kernel(X[i], X[j])
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        # Compute all off-diagonal kernel values, using symmetry of the kernel matrix
         futures = {executor.submit(compute_kernel, i, j): (i, j) for i in range(N) for j in range(i + 1, N)}
         for future in concurrent.futures.as_completed(futures):
             i, j = futures[future]
@@ -95,13 +83,10 @@ def square_kernel_matrix(X, kernel, assume_normalized_kernel=False):
             matrix[N * j + i] = kernel_value
 
     if assume_normalized_kernel:
-        # Create a one-like entry that has the same interface and batching as the kernel output
-        # As we excluded the case N=1 together with assume_normalized_kernel above, matrix[1] exists
         one = qml.math.ones_like(matrix[1])
         for i in range(N):
             matrix[N * i + i] = one
     else:
-        # Fill the diagonal by computing the corresponding kernel values
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = {executor.submit(compute_kernel , i, i): i for i in range(N)}
             for future in concurrent.futures.as_completed(futures):
