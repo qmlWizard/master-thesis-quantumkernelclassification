@@ -1,5 +1,5 @@
 train_config = {
-	'training_dataset_path': '/Users/digvijay/Developer/MasterThesis/master-thesis-quantumkernelclassification/Data/Testdata.csv',
+	'training_dataset_path': '../Data/Testdata.csv',
 	'dr_technique': 'pca',
 	'dr_components': 3,
     'train_without_alignment': False,
@@ -18,6 +18,6 @@ train_config = {
     'ranking': [True, False],
     'subset_sizes': [4, 8, 16, 24, 48],
     'file_name': "Experiment_1.txt",
-    'alignment_epochs': 20,
+    'alignment_epochs': 100,
 	'multithreading':True,
 }

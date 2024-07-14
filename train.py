@@ -16,6 +16,9 @@ import logging
 import concurrent.futures
 from datetime import datetime
 import time
+import jax
+from jax import numpy as jnp
+from jax import vmap, random
 
 alignment_epochs = 10
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(threadName)s - %(levelname)s - %(message)s')
@@ -34,7 +37,7 @@ def train(kernel, train_type='random', subset_size=4, ranking=False):
             subset = np.random.choice(list(range(len(x_train))), subset_size)
         elif train_type == 'greedy':
             trained_kernel_greedy = lambda x1, x2: kernel(x1, x2, params)[0]
-            trained_kernel_matrix_greedy = lambda X1, X2: kernel_matrix(X1, X2, trained_kernel_greedy)
+            trained_kernel_matrix_greedy = lambda X1, X2: qml.kernels.kernel_matrix(X1, X2, trained_kernel_greedy)
             svm_aligned_greedy = SVC(kernel=trained_kernel_matrix_greedy, probability=True).fit(x_train, y_train)
             subset = uncertinity_sampling_subset(
                 X=x_train,
@@ -42,13 +45,19 @@ def train(kernel, train_type='random', subset_size=4, ranking=False):
                 subSize=subset_size,
                 ranking=ranking
             )
+
+        def cost_kernel(x1, x2, _params):
+            return kernel(x1, x2, _params)[0]
         
-        cost = lambda _params: -target_alignment(
-            x_train[subset],
-            y_train[subset],
-            lambda x1, x2: kernel(x1, x2, _params)[0],
-            assume_normalized_kernel=True,
-        )
+        def cost(_params):
+            def kernel_with_params(x1, x2):
+                return kernel(x1, x2, _params)[0]
+    
+            return -target_alignment( x_train[subset],
+                                      y_train[subset],
+                                      kernel_with_params,
+                                      assume_normalized_kernel=True,
+                                    )
 
         params = opt.step(cost, params)
         cost_list.append(cost(params))
@@ -58,12 +67,17 @@ def train(kernel, train_type='random', subset_size=4, ranking=False):
                 x_train,
                 y_train,
                 lambda x1, x2: kernel(x1, x2, params)[0],
+                params,
                 assume_normalized_kernel=True,
             )
             print(f"Step {i+1} - Alignment = {current_alignment:.3f}")
 
-    trained_kernel = lambda x1, x2: kernel(x1, x2, params)[0]
-    trained_kernel_matrix = lambda X1, X2: kernel_matrix(X1, X2, trained_kernel)
+    def trained_kernel(x1, x2):
+        return kernel(x1, x2, params)[0]
+    
+    def trained_kernel_matrix(X1, X2):
+        kernel_matrix(X1, X2, trained_kernel)
+
     svm_aligned = SVC(kernel=trained_kernel_matrix).fit(x_train, y_train)
 
     accuracy_trained = accuracy(svm_aligned, x_train, y_train)

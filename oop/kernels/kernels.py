@@ -84,7 +84,6 @@ class kernel:
             
             self.encoding(
                             input_data = x, 
-                            num_qubits = num_qubits, 
                             wires = wires, 
                             gate = 'RZ', 
                             input_scaling = True, 
@@ -111,5 +110,5 @@ class kernel:
                             wires = wires
                             )
             
-        return qml.probs(wires=wires)
+        return qml.probs(wires=wires)[0]
     

@@ -4,7 +4,7 @@ from utils.data_preprocessing import data_preprocess
 from utils.kernel_alignment import target_alignment
 from utils.encoding import angle_encoding
 from utils.ansatz import efficient_su2
-from utils.kernel import kernel_circuit, square_kernel_matrix, kernel_matrix
+from utils.kernel import kernel_circuit
 from utils.utils import random_params, uncertinity_sampling_subset, accuracy
 from config import train_config
 import pandas as pd
