@@ -101,7 +101,7 @@ if __name__ == "__main__":
         
     print("Creating Quantum Kernel Circuit...")
         
-    dev = qml.device("default.qubit", wires=num_qubits, shots=None)
+    dev = qml.device("default.qubit", wires=num_qubits, shots=None, interface = 'jax')
     wires = dev.wires.tolist()
 
     params = random_params(
