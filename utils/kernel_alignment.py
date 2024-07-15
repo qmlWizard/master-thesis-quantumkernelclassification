@@ -3,6 +3,8 @@ from pennylane import numpy as np
 import concurrent.futures
 from itertools import product
 from utils.kernel import kernel_circuit
+from jax import numpy as jnp
+from jax import vmap
 
 def kernel_matrix(kernel, X1, X2):
 
@@ -31,55 +33,36 @@ def kernel_matrix(kernel, X1, X2):
 
     return qml.math.moveaxis(qml.math.reshape(matrix, (N, M, qml.math.size(matrix[0]))), -1, 0)
 
-
-
 def square_kernel_matrix(X, kernel, assume_normalized_kernel=False):
-    N = qml.math.shape(X)[0]
-    
+    N = X.shape[0]
+
     if assume_normalized_kernel and N == 1:
-        return qml.math.eye(1, like=qml.math.get_interface(X))
+        return jnp.eye(1)
 
-    # Initialize an empty matrix
-    matrix = [None] * (N * N)
-
+    # Create a device
     dev = qml.device("default.qubit", wires=3, shots=None)
     wires = dev.wires.tolist()
 
-    @qml.qnode(dev)
-    def compute_kernel(i, j):
-        return kernel(X[i], X[j])
+    @qml.qnode(dev, interface='jax')
+    def compute_kernel(x1, x2):
+        return kernel(x1, x2)[0]
 
-    # Function to fill in the matrix for a given row i
-    def fill_row(i):
-        for j in range(i + 1, N):
-            kernel_value = compute_kernel(i, j)
-            matrix[N * i + j] = kernel_value
-            matrix[N * j + i] = kernel_value
-    
-    # Parallel computation of the upper triangle (excluding diagonal)
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = [executor.submit(fill_row, i) for i in range(N)]
-        for future in concurrent.futures.as_completed(futures):
-            future.result()
+    # Vectorized kernel computation
+    compute_kernel_vmap = vmap(vmap(compute_kernel, in_axes=(None, 0)), in_axes=(0, None))
+    matrix = compute_kernel_vmap(X, X)
 
     if assume_normalized_kernel:
-        one = qml.math.ones_like(matrix[1])
-        for i in range(N):
-            matrix[N * i + i] = one
+        matrix = matrix.at[jnp.diag_indices(N)].set(1.0)
     else:
-        # Compute the diagonal elements
-        def fill_diagonal(i):
-            matrix[N * i + i] = compute_kernel(i, i)
-        
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = [executor.submit(fill_diagonal, i) for i in range(N)]
-            for future in concurrent.futures.as_completed(futures):
-                future.result()
+        compute_diag_kernel_vmap = vmap(compute_kernel)
+        diag_elements = compute_diag_kernel_vmap(X, X)
+        matrix = matrix.at[jnp.diag_indices(N)].set(diag_elements)
 
-    shape = (N, N) if qml.math.ndim(matrix[0]) == 0 else (N, N, qml.math.size(matrix[0]))
+    return matrix
 
-    return qml.math.moveaxis(qml.math.reshape(qml.math.stack(matrix), shape), -1, 0)
 
+
+"""
 def target_alignment(
     X,
     Y,
@@ -104,6 +87,35 @@ def target_alignment(
     T = np.outer(_Y, _Y)
     inner_product = np.sum(K * T)
     norm = np.sqrt(np.sum(K * K) * np.sum(T * T))
+    inner_product = inner_product / norm
+
+
+    return inner_product
+
+"""
+def target_alignment(
+    X,
+    Y,
+    kernel,
+    assume_normalized_kernel=False,
+    rescale_class_labels=True,
+):
+    K = square_kernel_matrix(
+        X,
+        kernel,
+        assume_normalized_kernel=assume_normalized_kernel,
+    )
+
+    if rescale_class_labels:
+        nplus = jnp.count_nonzero(jnp.array(Y) == 1)
+        nminus = len(Y) - nplus
+        _Y = jnp.array([y / nplus if y == 1 else y / nminus for y in Y])
+    else:
+        _Y = jnp.array(Y)
+
+    T = jnp.outer(_Y, _Y)
+    inner_product = jnp.sum(K * T)
+    norm = jnp.sqrt(jnp.sum(K * K) * jnp.sum(T * T))
     inner_product = inner_product / norm
 
     return inner_product

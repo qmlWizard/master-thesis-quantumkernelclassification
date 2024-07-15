@@ -15,7 +15,7 @@ def variational_circuit(x, params, num_qubits, wires):
 				  		num_qubits = num_qubits, 
 				  		wires = wires, 
 						gate = 'RZ', 
-						input_scaling = True, 
+						input_scaling = False, 
 						input_scaling_param = params[j, 0, 0, 0],  
 						hadamard = True
 					   )

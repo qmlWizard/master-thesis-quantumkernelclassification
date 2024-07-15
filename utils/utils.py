@@ -1,9 +1,10 @@
 from pennylane import numpy as np
 from sklearn.svm import SVC
+from jax import numpy as jnp
 
 def random_params(num_wires, num_layers, ansatz):
     if 'efficient_su2':
-        return np.random.uniform(0, 2 * np.pi, (2, num_layers + 1, 2, num_wires, 4), requires_grad=True)
+        return jnp.asarray(np.random.uniform(0, 2 * np.pi, (2, num_layers + 1, 2, num_wires, 4), requires_grad=True))
     
 def uncertinity_sampling_subset(X, svm_trained, subSize, sampling = 'entropy', ranking = False):
 	
@@ -11,7 +12,7 @@ def uncertinity_sampling_subset(X, svm_trained, subSize, sampling = 'entropy', r
 		if ranking:
 			probabilities = svm_trained.predict_proba(X)
 			entropy = -np.sum(probabilities * np.log(probabilities), axis=1)
-		
+			print(probabilities.shape)
 			sorted_indices = np.argsort(entropy)
 			sorted_entropy_values = np.sort(entropy)
 
@@ -23,6 +24,7 @@ def uncertinity_sampling_subset(X, svm_trained, subSize, sampling = 'entropy', r
 			return sampled_indices
 		
 		else:
+			print('Predicting Probabilites')
 			probabilities = svm_trained.predict_proba(X)
 			entropy = -np.sum(probabilities * np.log(probabilities), axis=1)
 			selected_indices = np.argsort(entropy)[:subSize]

@@ -49,6 +49,7 @@ def train(kernel, train_type='random', subset_size=4, ranking=False):
             assume_normalized_kernel=True,
         )
 
+
         params = opt.step(cost, params)
         cost_list.append(cost(params))
 

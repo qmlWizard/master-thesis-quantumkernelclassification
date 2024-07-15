@@ -59,12 +59,13 @@ opt = qml.GradientDescentOptimizer(0.2)
 x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=train_size, random_state=42)
 
 kernel_matrix = lambda x1, x2: compute_kernel_matrix(x1, x2)
-cost_list = []
+
 # Training loop
+cost_list = []
 for step in range(alignment_epochs):
     
  
-    subset = np.random.choice(list(range(len(x_train))), 4)
+    subset = np.random.choice(list(range(len(x_train))), 12)
 
     print(subset)
     # Define cost function with JAX-compatible gradient
@@ -79,6 +80,8 @@ for step in range(alignment_epochs):
     #params = params - 0.2 * cost_grad(params)
     cost_list.append(cost(params))
     params = opt.step(cost, params)
+
+    
 
     """                                         
     if (step + 1) % 10 == 0:
@@ -112,10 +115,10 @@ data_dict = {
     'train_accuracy': [accuracy_trained],
     'test_accuracy': [testing_accuracy],
     'cost_list': [cost_list],
-    'subset_size': [4]
+    'subset_size': [12]
 }
 
-np.save('train_random_4.npy', data_dict)
+np.save('train_random_12.npy', data_dict)
 
 # Create a plot
 plt.figure(figsize=(10, 6))
@@ -134,4 +137,4 @@ plt.legend()
 
 # Show the plot
 plt.show()
-plt.savefig('train_random_4.png')
+plt.savefig('train_random_12.png')
