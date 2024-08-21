@@ -86,7 +86,7 @@ def target_alignment(
 
     T = np.outer(_Y, _Y)
     inner_product = np.sum(K * T)
-    norm = np.sqrt(np.sum(K * K) * np.sum(T * T))
+    norm = np.sqrt(n.sum(K * K) * np.sum(T * T))
     inner_product = inner_product / norm
 
 

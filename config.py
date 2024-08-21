@@ -1,5 +1,5 @@
 train_config = {
-	'training_dataset_path': '/Users/digvijay/Developer/MasterThesis/master-thesis-quantumkernelclassification/Data/Testdata.csv',
+	'training_dataset_path': '/Users/digvijay/Developer/MasterThesis/master-thesis-quantumkernelclassification/Data/Testdata_binary.csv',
 	'dr_technique': 'pca',
 	'dr_components': 3,
     'train_without_alignment': False,
@@ -8,7 +8,7 @@ train_config = {
     'train_with_alignment_greedy_sampling': True,
     'train_with_alignment_prob_greedy_sampling': True,
     'test_accuracy': False,
-    'train_size': 0.2,
+    'train_size': 0.8,
     'training_layers': 6,
     'ansatz': 'efficient_su2',
     'uncertainty_sampling': False,
