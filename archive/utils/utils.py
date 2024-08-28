@@ -1,10 +1,9 @@
 from pennylane import numpy as np
 from sklearn.svm import SVC
-from jax import numpy as jnp
 
 def random_params(num_wires, num_layers, ansatz):
     if 'efficient_su2':
-        return jnp.asarray(np.random.uniform(0, 2 * np.pi, (2, num_layers + 1, 2, num_wires, 4), requires_grad=True))
+        return np.asarray(np.random.uniform(0, 2 * np.pi, (2, num_layers + 1, 2, num_wires, 4), requires_grad=True))
     
 def uncertinity_sampling_subset(X, svm_trained, subSize, sampling = 'entropy', ranking = False):
 	

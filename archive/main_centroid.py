@@ -1,8 +1,7 @@
 import pennylane as qml
 import pennylane.numpy as np
 from utils.data_preprocessing import data_preprocess
-from utils.kernel_alignment import target_alignment
-from utils.kernel import kernel_circuit, kernel_matrix
+from utils.kernel import kernel_circuit
 from config import train_config
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
@@ -30,7 +29,14 @@ def centered_kernel_matrix(centroid_idx, centroid, x, y, kernel, params):
     km = np.zeros((1, len(x)))
     ideal_km = np.zeros((1, len(x)))
  
+    
     for i in range(len(x)):
+        print("C: ", centroid)
+        print("X: ", x[i])
+        print(np.asarray(kernel(    x1 = centroid, 
+                                    x2 = x[i],  
+                                    params = params
+                                ))[0])
         km[0][i] = np.asarray(kernel(  x1 = centroid, 
                             x2 = x[i],  
                             params = params
@@ -136,7 +142,7 @@ for i in range(100):  #train_config['alignment_epochs']):
 
     cost = lambda _params: - target_alignment(selected_centroid, c, x_train, y_train, kernel, _params)
 
-    cost_list.append(cost(params))
+    #cost_list.append(cost(params))
 
     params = opt.step(cost, params)
     
@@ -145,6 +151,7 @@ for i in range(100):  #train_config['alignment_epochs']):
     else:
         selected_centroid = 1
 
+    """
     print(i)
 
     km, ideal_km = centered_kernel_matrix(selected_centroid, c[str(selected_centroid + 1)], x_train, y_train, kernel,  params)
@@ -152,6 +159,7 @@ for i in range(100):  #train_config['alignment_epochs']):
     weighted_sum = np.sum(km[i] @ x.T, axis=1)
     sum_weights = np.sum(km[i])
     c[str(i + 1)] = weighted_sum / sum_weights if sum_weights != 0 else c[str(i + 1)]
+    """
     
 
 

@@ -3,8 +3,6 @@ from pennylane import numpy as np
 import concurrent.futures
 from itertools import product
 from utils.kernel import kernel_circuit
-from jax import numpy as jnp
-from jax import vmap
 
 def kernel_matrix(kernel, X1, X2):
 
